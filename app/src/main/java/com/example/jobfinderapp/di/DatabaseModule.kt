@@ -3,7 +3,9 @@ package com.example.jobfinderapp.di
 import android.content.Context
 import androidx.room.Room
 import com.example.jobfinderapp.data.local.JobDatabase
+import com.example.jobfinderapp.data.local.dao.FilterPreferencesDao
 import com.example.jobfinderapp.data.local.dao.JobDao
+import com.example.jobfinderapp.data.local.dao.SearchHistoryDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,6 +29,16 @@ object DatabaseModule {
     fun provideJobDao(database: JobDatabase): JobDao{
         return database.jobDao()
     }
+    @Provides
+    @Singleton
+    fun provideSearchHistoryDao(database: JobDatabase): SearchHistoryDao {
+        return database.searchHistoryDao()
+    }
 
+    @Provides
+    @Singleton
+    fun provideFilterPreferencesDao(database: JobDatabase): FilterPreferencesDao {
+        return database.filterPreferencesDao()
+    }
 
 }
