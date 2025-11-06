@@ -90,7 +90,15 @@ dependencies {
     // Coil for image loading
     implementation(libs.coil.compose)
     implementation(libs.androidx.material.icons.extended)
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
 
+    // For notification permission on Android 13+
+    implementation("com.google.accompanist:accompanist-permissions:0.35.2-beta")
+
+    // AndroidX Browser for Custom Tabs
+    implementation("androidx.browser:browser:1.8.0")
     // Navigation
     implementation(libs.navigation.compose)
 }
