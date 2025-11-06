@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -16,8 +17,8 @@ fun RequestNotificationPermission() {
             permission = Manifest.permission.POST_NOTIFICATIONS
         )
 
-        LaunchedEffect(key1 = Unit) {
-            if (!notificationPermissionState.hasPermission) {
+        LaunchedEffect(Unit) {
+            if (!notificationPermissionState.status.isGranted) {
                 notificationPermissionState.launchPermissionRequest()
             }
         }

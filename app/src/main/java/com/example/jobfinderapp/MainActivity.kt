@@ -11,7 +11,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.jobfinderapp.presentation.common.components.RequestNotificationPermission
 import com.example.jobfinderapp.presentation.home.HomeScreen
+import com.example.jobfinderapp.presentation.navigation.JobFinderNavigation
 import com.example.jobfinderapp.ui.theme.JobFinderTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -23,14 +25,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             JobFinderTheme {
-                HomeScreen(
-                    onJobClick = { jobId ->
-
-                    },
-                    onSearchClick = {
-
-                    }
-                )
+                RequestNotificationPermission()
+                JobFinderNavigation()
             }
         }
         }

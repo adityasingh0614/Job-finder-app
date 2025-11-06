@@ -12,70 +12,91 @@ import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.jobfinderapp.presentation.common.components.EmptyState
 import com.example.jobfinderapp.presentation.common.components.ErrorState
 import com.example.jobfinderapp.presentation.common.components.JobCard
 import com.example.jobfinderapp.presentation.common.components.LoadingShimmer
+import com.yourname.jobfinder.presentation.home.HomeViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onJobClick: (Int) -> Unit, onSearchClick: () -> Unit, viewModel: HomeViewModel = hiltViewModel()
+    onJobClick: (Int) -> Unit,
+    onSearchClick: () -> Unit,
+    viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val jobsPagingItems = viewModel.jobsPagingFlow.collectAsLazyPagingItems()
     val savedJobIds by viewModel.savedJobIds.collectAsState()
-    var isRefreshing by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = {
-            HomeTopBar(
-                onSearchClick = onSearchClick
-            )
-        }) { paddingValues ->
-        PullToRefreshBox(
-            isRefreshing = isRefreshing, onRefresh = {
-                isRefreshing = true
-                viewModel.refresh()
-            }, modifier = Modifier
+        topBar = { HomeTopBar(onSearchClick = onSearchClick) }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            contentPadding = PaddingValues(bottom = 16.dp)
         ) {
-            LaunchedEffect(uiState) {
-                if (uiState !is HomeUiState.Loading) {
-                    isRefreshing = false
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            items(
+                count = jobsPagingItems.itemCount,
+                key = { index -> jobsPagingItems[index]?.id ?: index }
+            ) { index ->
+                val job = jobsPagingItems[index]
+
+                job?.let {
+                    JobCard(
+                        title = it.title,
+                        companyName = it.companyName,
+                        location = it.location,
+                        salary = it.salary ?: "Not specified",
+                        companyLogo = it.companyLogo,
+                        tags = it.tags,
+                        isBookmarked = savedJobIds.contains(it.id),
+                        onCardClick = { onJobClick(it.id) },
+                        onBookmarkClick = { viewModel.toggleBookmark(it) }
+                    )
                 }
             }
 
-            when (val state = uiState) {
-                is HomeUiState.Loading -> {
-                    LoadingShimmer()
+            // Loading state
+            when {
+                jobsPagingItems.loadState.refresh is LoadState.Loading -> {
+                    item {
+                        LoadingShimmer()
+                    }
                 }
-
-                is HomeUiState.Success -> {
-                    JobsList(
-                        jobs = state.jobs,
-                        savedJobIds = savedJobIds,
-                        onJobClick = onJobClick,
-                        onBookmarkClick = { job ->
-                            viewModel.toggleBookmark(job)
-                        })
+                jobsPagingItems.loadState.append is LoadState.Loading -> {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
                 }
-
-                is HomeUiState.Empty -> {
-                    EmptyState(
-                        message = "No jobs found", description = "Try adjusting your search filters"
-                    )
-                }
-
-                is HomeUiState.Error -> {
-                    ErrorState(
-                        message = state.message, onRetryClick = { viewModel.refresh() })
+                jobsPagingItems.loadState.refresh is LoadState.Error -> {
+                    val error = jobsPagingItems.loadState.refresh as LoadState.Error
+                    item {
+                        ErrorState(
+                            message = error.error.message ?: "Unknown error",
+                            onRetryClick = { jobsPagingItems.retry() }
+                        )
+                    }
                 }
             }
         }

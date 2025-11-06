@@ -101,4 +101,6 @@ dependencies {
     implementation("androidx.browser:browser:1.8.0")
     // Navigation
     implementation(libs.navigation.compose)
+    implementation("androidx.navigation:navigation-compose:2.9.6")
+
 }
