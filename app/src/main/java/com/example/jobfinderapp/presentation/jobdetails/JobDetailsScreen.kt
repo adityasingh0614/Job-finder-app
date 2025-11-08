@@ -1,5 +1,6 @@
 package com.example.jobfinderapp.presentation.jobdetails
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
@@ -20,8 +21,10 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
@@ -342,7 +345,7 @@ private fun JobDetailsContent(
 
 @Composable
 private fun InfoItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     label: String,
     value: String
 ) {
@@ -371,7 +374,7 @@ private fun InfoItem(
 }
 
 @Composable
-private fun SectionHeader(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+private fun SectionHeader(title: String, icon: ImageVector) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(
             imageVector = icon,
@@ -388,14 +391,14 @@ private fun SectionHeader(title: String, icon: androidx.compose.ui.graphics.vect
     }
 }
 
-private fun openUrlInCustomTabs(context: android.content.Context, url: String) {
+private fun openUrlInCustomTabs(context: Context, url: String) {
     val customTabsIntent = CustomTabsIntent.Builder()
         .setShowTitle(true)
         .build()
     customTabsIntent.launchUrl(context, Uri.parse(url))
 }
 
-private fun shareJob(context: android.content.Context, job: Job) {
+private fun shareJob(context: Context, job: Job) {
     val shareIntent = Intent.createChooser(
         Intent().apply {
             action = Intent.ACTION_SEND
@@ -409,4 +412,46 @@ private fun shareJob(context: android.content.Context, job: Job) {
         "Share Job"
     )
     context.startActivity(shareIntent)
+}
+
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun JobDetailsPreview() {
+    val sampleJob = Job(
+        id = 1,
+        title = "Senior Android Developer",
+        companyName = "IndieTribe Technologies",
+        companyLogo = "https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png",
+        location = "Remote - India",
+        jobType = "Full-Time",
+        category = "Software Development",
+        description = """
+            We’re looking for a passionate Android Developer to join our growing team.
+            You will work with modern tools such as Jetpack Compose, Kotlin, and Clean Architecture.
+            
+            Responsibilities:
+            • Build scalable mobile features
+            • Collaborate with backend engineers
+            • Write clean, maintainable code
+            
+            Requirements:
+            • Strong understanding of Kotlin
+            • Experience with Compose
+            • Familiarity with REST APIs
+        """.trimIndent(),
+        salary = "₹15–25 LPA",
+        tags = listOf("Kotlin", "Compose", "Remote", "Full-Time"),
+        applyUrl = "https://www.example.com/job-details/1",
+        postedDate = TODO()
+    )
+
+    MaterialTheme {
+        JobDetailsContent(
+            job = sampleJob,
+            isBookmarked = true,
+            onBookmarkClick = {},
+            onShareClick = {}
+        )
+    }
 }

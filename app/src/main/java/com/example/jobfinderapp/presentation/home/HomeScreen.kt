@@ -1,27 +1,21 @@
 package com.example.jobfinderapp.presentation.home
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.example.jobfinderapp.presentation.common.components.EmptyState
 import com.example.jobfinderapp.presentation.common.components.ErrorState
 import com.example.jobfinderapp.presentation.common.components.JobCard
 import com.example.jobfinderapp.presentation.common.components.LoadingShimmer
@@ -49,9 +43,12 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
+            // ✅ Jobs List with proper key
             items(
                 count = jobsPagingItems.itemCount,
-                key = { index -> jobsPagingItems[index]?.id ?: index }
+                key = { index ->
+                    jobsPagingItems.peek(index)?.id ?: "item_$index"
+                }
             ) { index ->
                 val job = jobsPagingItems[index]
 
@@ -70,15 +67,16 @@ fun HomeScreen(
                 }
             }
 
-            // Loading state
+            // Loading state for initial load
             when {
                 jobsPagingItems.loadState.refresh is LoadState.Loading -> {
-                    item {
+                    item(key = "loading_refresh") {
                         LoadingShimmer()
                     }
                 }
+
                 jobsPagingItems.loadState.append is LoadState.Loading -> {
-                    item {
+                    item(key = "loading_append") {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -89,9 +87,10 @@ fun HomeScreen(
                         }
                     }
                 }
+
                 jobsPagingItems.loadState.refresh is LoadState.Error -> {
                     val error = jobsPagingItems.loadState.refresh as LoadState.Error
-                    item {
+                    item(key = "error") {
                         ErrorState(
                             message = error.error.message ?: "Unknown error",
                             onRetryClick = { jobsPagingItems.retry() }
@@ -155,56 +154,20 @@ private fun HomeTopBar(
                 },
                 leadingIcon = {
                     Icon(
-                        imageVector = Icons.Default.Search, contentDescription = "Search"
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search"
                     )
                 },
                 trailingIcon = {
                     IconButton(onClick = { /* Open filters */ }) {
                         Icon(
-                            imageVector = Icons.Outlined.FilterList, contentDescription = "Filters"
+                            imageVector = Icons.Outlined.FilterList,
+                            contentDescription = "Filters"
                         )
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {}
-        }
-    }
-}
-
-@Composable
-private fun JobsList(
-    jobs: List<com.example.jobfinderapp.domain.model.Job>,
-    savedJobIds: Set<Int>,
-    onJobClick: (Int) -> Unit,
-    onBookmarkClick: (com.example.jobfinderapp.domain.model.Job) -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)
-    ) {
-        item {
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        items(
-            items = jobs, key = { job -> job.id }) { job ->
-            AnimatedVisibility(
-                visible = true,
-                enter = fadeIn(animationSpec = tween(300)) + slideInVertically(
-                    animationSpec = tween(300)
-                ),
-                exit = fadeOut(animationSpec = tween(300))
-            ) {
-                JobCard(
-                    title = job.title,
-                    companyName = job.companyName,
-                    location = job.location,
-                    salary = job.salary ?: "Not specified",
-                    companyLogo = job.companyLogo,
-                    tags = job.tags,
-                    isBookmarked = savedJobIds.contains(job.id),
-                    onCardClick = { onJobClick(job.id) },
-                    onBookmarkClick = { onBookmarkClick(job) })
-            }
         }
     }
 }
