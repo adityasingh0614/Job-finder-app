@@ -1,6 +1,5 @@
 package com.example.jobfinderapp.presentation.navigation
 
-
 import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -8,20 +7,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.jobfinderapp.presentation.home.HomeScreen
 import com.example.jobfinderapp.presentation.jobdetails.JobDetailsScreen
 import com.example.jobfinderapp.presentation.profile.ProfileScreen
 import com.example.jobfinderapp.presentation.saved.SavedJobsScreen
 import com.example.jobfinderapp.presentation.search.SearchScreen
 import com.example.jobfinderapp.presentation.settings.SettingsScreen
+import androidx.compose.foundation.layout.WindowInsets
+import com.example.jobfinderapp.presentation.components.FilterBottomSheet
 
 @Composable
 fun JobFinderNavigation() {
@@ -56,13 +56,9 @@ fun JobFinderNavigation() {
                     savedJobsCount = savedJobsCount
                 )
             }
-        }
+        },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
-        val bottomPadding = if (showBottomBar) {
-            paddingValues.calculateBottomPadding()
-        } else {
-            0.dp
-        }
         NavHost(
             navController = navController,
             startDestination = Route.Home,
@@ -94,14 +90,33 @@ fun JobFinderNavigation() {
         ) {
             // Home Screen
             composable<Route.Home> {
+                // ✅ Create a state to show/hide filter bottom sheet
+                var showFilterSheet by remember { mutableStateOf(false) }
+
                 HomeScreen(
                     onJobClick = { jobId ->
                         navController.navigate(Route.JobDetails(jobId))
                     },
                     onSearchClick = {
                         navController.navigate(Route.Search)
+                    },
+                    onFilterClick = {
+                        // ✅ Show filter bottom sheet
+                        showFilterSheet = true
                     }
                 )
+
+                // ✅ Show filter bottom sheet when needed
+                if (showFilterSheet) {
+                    FilterBottomSheet(
+                        onDismiss = { showFilterSheet = false },
+                        onApplyFilters = { filters ->
+                            // Apply filters to ViewModel
+                            // Get the ViewModel from HomeScreen scope
+                            showFilterSheet = false
+                        }
+                    )
+                }
             }
 
             // Search Screen
@@ -113,10 +128,15 @@ fun JobFinderNavigation() {
                     }
                 )
             }
+
+            // Saved Jobs Screen
             composable<Route.Saved> {
                 SavedJobsScreen(
                     onJobClick = { jobId ->
                         navController.navigate(Route.JobDetails(jobId))
+                    },
+                    onSavedCountChange = { count ->
+                        savedJobsCount = count
                     }
                 )
             }

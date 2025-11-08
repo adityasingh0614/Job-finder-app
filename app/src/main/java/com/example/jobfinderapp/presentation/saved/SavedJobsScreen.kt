@@ -1,9 +1,10 @@
 package com.example.jobfinderapp.presentation.saved
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,9 +18,15 @@ import com.example.jobfinderapp.presentation.common.components.JobCard
 @Composable
 fun SavedJobsScreen(
     onJobClick: (Int) -> Unit,
+    onSavedCountChange: (Int) -> Unit = {}, // ✅ Add this parameter with default value
     viewModel: SavedJobsViewModel = hiltViewModel()
 ) {
     val savedJobs by viewModel.savedJobs.collectAsState()
+
+    // ✅ Update count when saved jobs change
+    LaunchedEffect(savedJobs.size) {
+        onSavedCountChange(savedJobs.size)
+    }
 
     Scaffold(
         topBar = {
@@ -85,7 +92,7 @@ private fun EmptySavedJobs(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(32.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.Delete,
+                imageVector = Icons.Default.BookmarkBorder,
                 contentDescription = null,
                 modifier = Modifier.size(120.dp),
                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)

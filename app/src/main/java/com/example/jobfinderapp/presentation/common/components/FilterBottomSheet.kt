@@ -1,6 +1,4 @@
-@file:OptIn(ExperimentalLayoutApi::class)
-
-package com.example.jobfinderapp.presentation.common.components
+package com.example.jobfinderapp.presentation.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -12,21 +10,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.jobfinderapp.domain.model.JobFilter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FilterBottomSheet(
-    currentFilters: com.example.jobfinderapp.presentation.search.FilterState,
     onDismiss: () -> Unit,
-    onApplyFilters: (com.example.jobfinderapp.presentation.search.FilterState) -> Unit
+    onApplyFilters: (JobFilter) -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = false
-    )
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
 
-    var selectedCategory by remember { mutableStateOf(currentFilters.selectedCategory) }
-    var selectedJobTypes by remember { mutableStateOf(currentFilters.selectedJobTypes) }
-    var selectedLocation by remember { mutableStateOf(currentFilters.selectedLocation) }
+    var selectedCategory by remember { mutableStateOf("") }
+    var selectedJobTypes by remember { mutableStateOf(setOf<String>()) }
 
     val categories = listOf(
         "All Categories",
@@ -35,60 +30,46 @@ fun FilterBottomSheet(
         "Marketing",
         "Customer Support",
         "Sales",
-        "Product",
-        "Data Science",
-        "DevOps"
+        "Product"
     )
 
     val jobTypes = listOf(
         "Full-time",
         "Part-time",
         "Contract",
-        "Freelance",
-        "Internship"
-    )
-
-    val locations = listOf(
-        "Worldwide",
-        "USA Only",
-        "Europe Only",
-        "Asia Only",
-        "Remote - US Timezone",
-        "Remote - EU Timezone"
+        "Freelance"
     )
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
+        sheetState = sheetState
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 16.dp)
+                .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header
             Text(
                 text = "Filters",
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
+                fontWeight = FontWeight.Bold
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Category Section
             Text(
                 text = "Category",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(vertical = 8.dp)
+                fontWeight = FontWeight.SemiBold
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 categories.forEach { category ->
                     FilterChip(
@@ -98,13 +79,7 @@ fun FilterBottomSheet(
                         },
                         label = { Text(category) },
                         leadingIcon = if (selectedCategory == category) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
+                            { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
                         } else null
                     )
                 }
@@ -116,14 +91,14 @@ fun FilterBottomSheet(
             Text(
                 text = "Job Type",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(vertical = 8.dp)
+                fontWeight = FontWeight.SemiBold
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 jobTypes.forEach { jobType ->
                     FilterChip(
@@ -137,46 +112,7 @@ fun FilterBottomSheet(
                         },
                         label = { Text(jobType) },
                         leadingIcon = if (jobType in selectedJobTypes) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        } else null
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Location Section
-            Text(
-                text = "Location",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                locations.forEach { location ->
-                    FilterChip(
-                        selected = selectedLocation == location,
-                        onClick = { selectedLocation = location },
-                        label = { Text(location) },
-                        leadingIcon = if (selectedLocation == location) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
+                            { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
                         } else null
                     )
                 }
@@ -193,7 +129,6 @@ fun FilterBottomSheet(
                     onClick = {
                         selectedCategory = ""
                         selectedJobTypes = emptySet()
-                        selectedLocation = ""
                     },
                     modifier = Modifier.weight(1f)
                 ) {
@@ -203,19 +138,20 @@ fun FilterBottomSheet(
                 Button(
                     onClick = {
                         onApplyFilters(
-                            com.example.jobfinderapp.presentation.search.FilterState(
-                                selectedCategory = selectedCategory,
-                                selectedJobTypes = selectedJobTypes,
-                                selectedLocation = selectedLocation
+                            JobFilter(
+                                category = selectedCategory,
+                                jobType = selectedJobTypes.joinToString(",")
                             )
                         )
                         onDismiss()
                     },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Apply Filters")
+                    Text("Apply")
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

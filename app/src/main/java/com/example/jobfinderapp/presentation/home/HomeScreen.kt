@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -25,19 +26,21 @@ import com.yourname.jobfinder.presentation.home.HomeViewModel
 fun HomeScreen(
     onJobClick: (Int) -> Unit,
     onSearchClick: () -> Unit,
+    onFilterClick: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val jobsPagingItems = viewModel.jobsPagingFlow.collectAsLazyPagingItems()
     val savedJobIds by viewModel.savedJobIds.collectAsState()
 
     Scaffold(
-        topBar = { HomeTopBar(onSearchClick = onSearchClick) }
+        topBar = { HomeTopBar(onSearchClick = onSearchClick, onFilterClick = onFilterClick) },  contentWindowInsets = WindowInsets(0.dp),
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(bottom = 16.dp)
+            contentPadding = PaddingValues(bottom = 8.dp)
         ) {
             item {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -105,7 +108,8 @@ fun HomeScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeTopBar(
-    onSearchClick: () -> Unit
+    onSearchClick: () -> Unit,
+    onFilterClick: () -> Unit // ✅ Add this parameter
 ) {
     Box(
         modifier = Modifier
@@ -124,7 +128,6 @@ private fun HomeTopBar(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Header
             Text(
                 text = "Find Your Dream Job",
                 style = MaterialTheme.typography.headlineMedium,
@@ -142,7 +145,6 @@ private fun HomeTopBar(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Search Bar
             SearchBar(
                 query = "",
                 onQueryChange = {},
@@ -159,7 +161,7 @@ private fun HomeTopBar(
                     )
                 },
                 trailingIcon = {
-                    IconButton(onClick = { /* Open filters */ }) {
+                    IconButton(onClick = onFilterClick) { // ✅ Connect to actual function
                         Icon(
                             imageVector = Icons.Outlined.FilterList,
                             contentDescription = "Filters"
@@ -171,3 +173,4 @@ private fun HomeTopBar(
         }
     }
 }
+

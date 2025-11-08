@@ -22,6 +22,7 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _currentFilter = MutableStateFlow(JobFilter())
+    val currentFilter: StateFlow<JobFilter> = _currentFilter.asStateFlow()
 
     val jobsPagingFlow: Flow<PagingData<Job>> = _currentFilter
         .flatMapLatest { filter ->
@@ -48,6 +49,11 @@ class HomeViewModel @Inject constructor(
     fun updateFilter(filter: JobFilter) {
         _currentFilter.value = filter
     }
+
+    fun clearFilters() {
+        _currentFilter.value = JobFilter()
+    }
+
 
     fun toggleBookmark(job: Job) {
         viewModelScope.launch {

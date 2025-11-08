@@ -3,6 +3,8 @@ package com.example.jobfinderapp.presentation.jobdetails
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.text.Html
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -26,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.jobfinderapp.domain.model.Job
@@ -331,11 +334,21 @@ private fun JobDetailsContent(
 
             // About the Job
             SectionHeader(title = "About the Job", icon = Icons.Default.Description)
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(1.dp))
             Text(
-                text = job.description,
+                text = remember(job.description) {
+                    // Remove HTML tags and clean up the text
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        Html.fromHtml(job.description, Html.FROM_HTML_MODE_LEGACY).toString()
+                    } else {
+                        Html.fromHtml(job.description).toString()
+                    }
+                        .replace("\n\n\n", "\n\n") // Remove excessive newlines
+                        .trim()
+                },
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                lineHeight = 29.sp // Better readability
             )
 
             Spacer(modifier = Modifier.height(100.dp)) // Space for FAB
