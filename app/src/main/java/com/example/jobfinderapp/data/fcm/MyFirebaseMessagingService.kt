@@ -14,23 +14,26 @@ import com.google.firebase.messaging.RemoteMessage
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
+    // In MyFirebaseMessagingService.kt
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
-        Log.d(TAG, "From: ${remoteMessage.from}")
+        Log.d("FCM", "===== MESSAGE RECEIVED =====")
+        Log.d("FCM", "From: ${remoteMessage.from}")
+        Log.d("FCM", "Notification: ${remoteMessage.notification}")
+        Log.d("FCM", "Data: ${remoteMessage.data}")
 
-        // Check if message contains notification payload
         remoteMessage.notification?.let { notification ->
             val title = notification.title ?: "New Job Alert"
             val body = notification.body ?: "Check out new opportunities"
-
-            // Extract job data if present
             val jobId = remoteMessage.data["jobId"]?.toIntOrNull()
 
+            Log.d("FCM", "Sending notification: $title - $body")
             sendNotification(title, body, jobId)
         }
 
-        // Handle data payload
+
+    // Handle data payload
         remoteMessage.data.isNotEmpty().let {
             Log.d(TAG, "Message data payload: ${remoteMessage.data}")
 

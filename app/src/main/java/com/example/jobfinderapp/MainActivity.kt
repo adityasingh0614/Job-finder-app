@@ -1,6 +1,7 @@
 package com.example.jobfinderapp
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -16,6 +17,7 @@ import com.example.jobfinderapp.presentation.common.components.RequestNotificati
 import com.example.jobfinderapp.presentation.home.HomeScreen
 import com.example.jobfinderapp.presentation.navigation.JobFinderNavigation
 import com.example.jobfinderapp.ui.theme.JobFinderTheme
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -25,6 +27,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                Log.d("FCM_TOKEN", "FCM Token: $token")
+                // Copy this token from Logcat for testing
+            } else {
+                Log.e("FCM_TOKEN", "Failed to get token", task.exception)
+            }
+        }
         setContent {
             JobFinderTheme {
                 RequestNotificationPermission()

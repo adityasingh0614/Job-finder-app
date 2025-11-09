@@ -10,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.example.jobfinderapp.presentation.about.AboutScreen
 import com.example.jobfinderapp.presentation.home.HomeScreen
 import com.example.jobfinderapp.presentation.jobdetails.JobDetailsScreen
 import com.example.jobfinderapp.presentation.profile.ProfileScreen
@@ -80,11 +81,18 @@ fun JobFinderNavigation() {
                     }
                 )
             }
-
+            composable<Route.About> {
+                AboutScreen(
+                    onBackClick = { navController.navigateUp() }
+                )
+            }
             composable<Route.Profile> {
                 ProfileScreen(
                     onSettingsClick = {
                         navController.navigate(Route.Settings)
+                    },
+                    onAboutClick = {
+                        navController.navigate(Route.About) // ✅ Add this
                     }
                 )
             }

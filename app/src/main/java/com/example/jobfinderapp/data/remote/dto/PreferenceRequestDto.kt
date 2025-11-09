@@ -5,12 +5,18 @@ import com.google.gson.annotations.SerializedName
 data class PreferenceRequestDto(
     @SerializedName("userId")
     val userId: String,
-    @SerializedName("jobId")
-    val jobId: String? = null,
-    @SerializedName("filters")
-    val filters: FilterDto,
+
     @SerializedName("fcmToken")
-    val fcmToken: String
+    val fcmToken: String,
+
+    @SerializedName("enableAlerts")
+    val enableAlerts: Boolean,
+
+    @SerializedName("alertFrequency")
+    val alertFrequency: String,
+
+    @SerializedName("jobTypes")
+    val jobTypes: List<String>
 )
 
 data class FilterDto(
@@ -25,17 +31,14 @@ data class FilterDto(
 data class PreferenceResponseDto(
     @SerializedName("message")
     val message: String,
+
     @SerializedName("preferenceId")
-    val preferenceId: String
+    val preferenceId: String? = null
 )
 
 data class UserPreferencesResponseDto(
-    @SerializedName("userId")
-    val userId: String,
     @SerializedName("preferences")
-    val preferences: List<PreferenceItemDto>,
-    @SerializedName("count")
-    val count: Int
+    val preferences: List<PreferenceRequestDto>
 )
 
 data class PreferenceItemDto(
