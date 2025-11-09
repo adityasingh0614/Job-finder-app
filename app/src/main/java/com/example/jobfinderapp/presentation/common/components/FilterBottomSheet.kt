@@ -11,17 +11,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.jobfinderapp.domain.model.JobFilter
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FilterBottomSheet(
+    currentFilters: JobFilter = JobFilter(), // ✅ Accept current filters
     onDismiss: () -> Unit,
     onApplyFilters: (JobFilter) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
 
-    var selectedCategory by remember { mutableStateOf("") }
-    var selectedJobTypes by remember { mutableStateOf(setOf<String>()) }
+    // ✅ Initialize with current filters
+    var selectedCategory by remember { mutableStateOf(currentFilters.category) }
+    var selectedJobType by remember { mutableStateOf(currentFilters.jobType) }
 
     val categories = listOf(
         "All Categories",
@@ -30,7 +31,8 @@ fun FilterBottomSheet(
         "Marketing",
         "Customer Support",
         "Sales",
-        "Product"
+        "Product",
+        "Data Science"
     )
 
     val jobTypes = listOf(
@@ -72,13 +74,12 @@ fun FilterBottomSheet(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 categories.forEach { category ->
+                    val displayCategory = if (category == "All Categories") "" else category
                     FilterChip(
-                        selected = selectedCategory == category,
-                        onClick = {
-                            selectedCategory = if (category == "All Categories") "" else category
-                        },
+                        selected = selectedCategory == displayCategory,
+                        onClick = { selectedCategory = displayCategory },
                         label = { Text(category) },
-                        leadingIcon = if (selectedCategory == category) {
+                        leadingIcon = if (selectedCategory == displayCategory) {
                             { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
                         } else null
                     )
@@ -102,16 +103,10 @@ fun FilterBottomSheet(
             ) {
                 jobTypes.forEach { jobType ->
                     FilterChip(
-                        selected = jobType in selectedJobTypes,
-                        onClick = {
-                            selectedJobTypes = if (jobType in selectedJobTypes) {
-                                selectedJobTypes - jobType
-                            } else {
-                                selectedJobTypes + jobType
-                            }
-                        },
+                        selected = selectedJobType == jobType,
+                        onClick = { selectedJobType = jobType },
                         label = { Text(jobType) },
-                        leadingIcon = if (jobType in selectedJobTypes) {
+                        leadingIcon = if (selectedJobType == jobType) {
                             { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
                         } else null
                     )
@@ -128,7 +123,7 @@ fun FilterBottomSheet(
                 OutlinedButton(
                     onClick = {
                         selectedCategory = ""
-                        selectedJobTypes = emptySet()
+                        selectedJobType = ""
                     },
                     modifier = Modifier.weight(1f)
                 ) {
@@ -137,13 +132,14 @@ fun FilterBottomSheet(
 
                 Button(
                     onClick = {
+                        // ✅ Apply filters with proper structure
                         onApplyFilters(
                             JobFilter(
                                 category = selectedCategory,
-                                jobType = selectedJobTypes.joinToString(",")
+                                jobType = selectedJobType,
+                                searchQuery = ""
                             )
                         )
-                        onDismiss()
                     },
                     modifier = Modifier.weight(1f)
                 ) {
@@ -155,3 +151,4 @@ fun FilterBottomSheet(
         }
     }
 }
+

@@ -1,6 +1,5 @@
 package com.example.jobfinderapp.presentation.jobdetails
 
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -23,14 +22,14 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import coil.request.CachePolicy
 import com.example.jobfinderapp.domain.model.Job
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,20 +69,17 @@ fun JobDetailsScreen(
                 val job = (uiState as JobDetailsUiState.Success).job
                 ExtendedFloatingActionButton(
                     onClick = {
-                        // Open URL in Custom Tabs
                         openUrlInCustomTabs(context, job.applyUrl)
                     },
                     icon = {
-                        Icon(
-                            imageVector = Icons.Default.OpenInBrowser,
-                            contentDescription = "Apply"
-                        )
+                        Icon(Icons.Default.OpenInBrowser, "Apply")
                     },
-                    text = { Text("Apply Now") },
-                    containerColor = MaterialTheme.colorScheme.primary
+                    text = { Text("Apply Now") }
                 )
             }
-        }
+        },
+        // ✅ Remove extra window insets
+        contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
         when (val state = uiState) {
             is JobDetailsUiState.Loading -> {
@@ -115,17 +111,8 @@ fun JobDetailsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "Error loading job details",
-                            style = MaterialTheme.typography.titleLarge
-                        )
+                        Text("Error loading job details")
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = state.message,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
                         Button(onClick = { viewModel.loadJobDetails(jobId) }) {
                             Text("Retry")
                         }
@@ -135,6 +122,7 @@ fun JobDetailsScreen(
         }
     }
 }
+
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -150,7 +138,7 @@ private fun JobDetailsContent(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        // Hero Section with Glassmorphism
+        // Hero Section with Company Logo
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -179,15 +167,54 @@ private fun JobDetailsContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Company Logo
-                AsyncImage(
-                    model = job.companyLogo,
-                    contentDescription = "Company logo",
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surface)
-                )
+                // ✅ FIXED: Company Logo with Initials Fallback
+                val fallbackLogoUrl = remember(job.companyName) {
+                    val domain = job.companyName.replace(" ", "").lowercase()
+                    "https://logo.clearbit.com/$domain.com"
+                }
+
+                var showInitials by remember { mutableStateOf(true) }
+
+                Box(
+                    modifier = Modifier.size(80.dp)
+                ) {
+                    // Show initials first
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(generateColorFromName(job.companyName)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = getCompanyInitials(job.companyName),
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+
+                    // Try to load actual logo
+                    if (!showInitials) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(fallbackLogoUrl)
+                                .memoryCachePolicy(CachePolicy.ENABLED)
+                                .diskCachePolicy(CachePolicy.ENABLED)
+                                .listener(
+                                    onSuccess = { _, _ ->
+                                        showInitials = false
+                                    }
+                                )
+                                .build(),
+                            contentDescription = "Company logo",
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surface)
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -215,7 +242,6 @@ private fun JobDetailsContent(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Location
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.LocationOn,
@@ -230,7 +256,6 @@ private fun JobDetailsContent(
                         )
                     }
 
-                    // Salary Badge
                     if (!job.salary.isNullOrEmpty()) {
                         Surface(
                             shape = MaterialTheme.shapes.medium,
@@ -260,11 +285,10 @@ private fun JobDetailsContent(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Action Buttons Row
+                // Action Buttons
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Bookmark Button
                     FilledTonalIconButton(onClick = onBookmarkClick) {
                         Icon(
                             imageVector = if (isBookmarked) Icons.Default.Bookmark
@@ -275,7 +299,6 @@ private fun JobDetailsContent(
                         )
                     }
 
-                    // Share Button
                     FilledTonalIconButton(onClick = onShareClick) {
                         Icon(
                             imageVector = Icons.Default.Share,
@@ -334,7 +357,7 @@ private fun JobDetailsContent(
 
             // About the Job
             SectionHeader(title = "About the Job", icon = Icons.Default.Description)
-            Spacer(modifier = Modifier.height(1.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = remember(job.description) {
                     // Remove HTML tags and clean up the text
@@ -351,14 +374,39 @@ private fun JobDetailsContent(
                 lineHeight = 29.sp // Better readability
             )
 
-            Spacer(modifier = Modifier.height(100.dp)) // Space for FAB
+
+            Spacer(modifier = Modifier.height(120.dp)) // Space for FAB
         }
     }
 }
 
+// ✅ Add these helper functions
+private fun getCompanyInitials(companyName: String): String {
+    val words = companyName.split(" ", "-", ".", ",")
+    return when {
+        words.size >= 2 -> "${words[0].firstOrNull()?.uppercase()}${words[1].firstOrNull()?.uppercase()}"
+        words.isNotEmpty() -> words[0].take(2).uppercase()
+        else -> "CO"
+    }
+}
+
+private fun generateColorFromName(name: String): Color {
+    val hash = name.hashCode()
+    val colors = listOf(
+        Color(0xFF6750A4),
+        Color(0xFF006A6A),
+        Color(0xFF8E4585),
+        Color(0xFF006D3B),
+        Color(0xFF825500),
+        Color(0xFF904D00),
+        Color(0xFF006874),
+    )
+    return colors[Math.abs(hash) % colors.size]
+}
+
 @Composable
 private fun InfoItem(
-    icon: ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     value: String
 ) {
@@ -387,7 +435,7 @@ private fun InfoItem(
 }
 
 @Composable
-private fun SectionHeader(title: String, icon: ImageVector) {
+private fun SectionHeader(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(
             imageVector = icon,
@@ -404,14 +452,14 @@ private fun SectionHeader(title: String, icon: ImageVector) {
     }
 }
 
-private fun openUrlInCustomTabs(context: Context, url: String) {
+private fun openUrlInCustomTabs(context: android.content.Context, url: String) {
     val customTabsIntent = CustomTabsIntent.Builder()
         .setShowTitle(true)
         .build()
     customTabsIntent.launchUrl(context, Uri.parse(url))
 }
 
-private fun shareJob(context: Context, job: Job) {
+private fun shareJob(context: android.content.Context, job: Job) {
     val shareIntent = Intent.createChooser(
         Intent().apply {
             action = Intent.ACTION_SEND
@@ -425,46 +473,4 @@ private fun shareJob(context: Context, job: Job) {
         "Share Job"
     )
     context.startActivity(shareIntent)
-}
-
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun JobDetailsPreview() {
-    val sampleJob = Job(
-        id = 1,
-        title = "Senior Android Developer",
-        companyName = "IndieTribe Technologies",
-        companyLogo = "https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png",
-        location = "Remote - India",
-        jobType = "Full-Time",
-        category = "Software Development",
-        description = """
-            We’re looking for a passionate Android Developer to join our growing team.
-            You will work with modern tools such as Jetpack Compose, Kotlin, and Clean Architecture.
-            
-            Responsibilities:
-            • Build scalable mobile features
-            • Collaborate with backend engineers
-            • Write clean, maintainable code
-            
-            Requirements:
-            • Strong understanding of Kotlin
-            • Experience with Compose
-            • Familiarity with REST APIs
-        """.trimIndent(),
-        salary = "₹15–25 LPA",
-        tags = listOf("Kotlin", "Compose", "Remote", "Full-Time"),
-        applyUrl = "https://www.example.com/job-details/1",
-        postedDate = TODO()
-    )
-
-    MaterialTheme {
-        JobDetailsContent(
-            job = sampleJob,
-            isBookmarked = true,
-            onBookmarkClick = {},
-            onShareClick = {}
-        )
-    }
 }

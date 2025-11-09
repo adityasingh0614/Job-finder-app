@@ -18,7 +18,7 @@ import com.example.jobfinderapp.presentation.common.components.JobCard
 @Composable
 fun SavedJobsScreen(
     onJobClick: (Int) -> Unit,
-    onSavedCountChange: (Int) -> Unit = {}, // ✅ Add this parameter with default value
+    onSavedCountChange: (Int) -> Unit = {},
     viewModel: SavedJobsViewModel = hiltViewModel()
 ) {
     val savedJobs by viewModel.savedJobs.collectAsState()

@@ -16,20 +16,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import coil.compose.SubcomposeAsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
-import com.example.jobfinderapp.R
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -47,9 +45,11 @@ fun JobCard(
 ) {
     val haptic = LocalHapticFeedback.current
 
-    // ✅ Log the logo URL to debug
-    LaunchedEffect(companyLogo) {
-        Log.d("JobCard", "Company: $companyName, Logo URL: '$companyLogo'")
+    // ✅ Generate fallback logo URL using Clearbit or company domain
+    val fallbackLogoUrl = remember(companyName) {
+        // Try to extract domain from company name or use Clearbit API
+        val domain = extractDomain(companyName)
+        "https://logo.clearbit.com/$domain"
     }
 
     Card(
@@ -72,61 +72,68 @@ fun JobCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.Top
         ) {
-            // ✅ FIXED: Better image loading with proper error handling
-            SubcomposeAsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(
-                        // ✅ Use placeholder if URL is empty or just whitespace
-                        if (companyLogo.isBlank()) null else companyLogo
+            // ✅ Use fallback logo service since Remotive blocks direct access
+            var showInitials by remember { mutableStateOf(false) }
+
+            if (showInitials) {
+                // Show company initials if image fails
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(generateColorFromName(companyName)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = getCompanyInitials(companyName),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        fontSize = 18.sp
                     )
-                    .crossfade(true)
-                    .build(),
-                contentDescription = "Company logo",
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentScale = ContentScale.Crop,
-                loading = {
-                    // Show loading indicator
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
-                error = {
-                    // Show placeholder icon on error
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Business,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
                 }
-            )
+            } else {
+                // ✅ Optimized AsyncImage with better configuration
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(fallbackLogoUrl)
+                        .crossfade(200) // Faster crossfade animation
+                        .size(48.dp.value.toInt()) // Specify exact size for faster loading
+                        .memoryCachePolicy(CachePolicy.ENABLED) // Enable memory cache
+                        .diskCachePolicy(CachePolicy.ENABLED) // Enable disk cache
+                        .networkCachePolicy(CachePolicy.ENABLED) // Enable network cache
+                        .listener(
+                            onStart = {
+                                // Show initials immediately while loading
+                                showInitials = true
+                            },
+                            onSuccess = { _, _ ->
+                                // Hide initials when image loads
+                                showInitials = false
+                            },
+                            onError = { _, _ ->
+                                // Keep showing initials on error
+                                showInitials = true
+                                Log.d("JobCard", "Using initials for: $companyName")
+                            }
+                        )
+                        .build(),
+                    contentDescription = "Company logo",
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentScale = ContentScale.Crop
+                )
+
+            }
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Job Details
+            // Rest of your JobCard code stays the same...
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                // Job Title
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
@@ -137,7 +144,6 @@ fun JobCard(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Company Name
                 Text(
                     text = companyName,
                     style = MaterialTheme.typography.bodyMedium,
@@ -146,7 +152,6 @@ fun JobCard(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Location
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Outlined.LocationOn,
@@ -164,7 +169,6 @@ fun JobCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Salary Badge
                 Box(
                     modifier = Modifier
                         .background(
@@ -188,7 +192,6 @@ fun JobCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Tags
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -210,7 +213,6 @@ fun JobCard(
                 }
             }
 
-            // Bookmark Icon
             IconButton(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -229,38 +231,36 @@ fun JobCard(
     }
 }
 
-@Preview(showBackground = true, name = "Job Card Preview")
-@Composable
-fun JobCardPreview() {
-    MaterialTheme {
-        JobCard(
-            title = "Senior Android Developer",
-            companyName = "Google",
-            location = "Remote",
-            salary = "$120k - $180k/year",
-            companyLogo = "https://example.com/logo.png",
-            tags = listOf("Kotlin", "Jetpack Compose", "MVVM"),
-            isBookmarked = false,
-            onCardClick = { },
-            onBookmarkClick = { }
-        )
+// ✅ Helper function to extract domain from company name
+private fun extractDomain(companyName: String): String {
+    return when {
+        companyName.contains("Healthcare", ignoreCase = true) -> "${companyName.replace(" ", "").lowercase()}.com"
+        else -> "${companyName.replace(" ", "").lowercase()}.com"
     }
 }
 
-@Preview(showBackground = true, name = "Bookmarked Job")
-@Composable
-fun JobCardBookmarkedPreview() {
-    MaterialTheme {
-        JobCard(
-            title = "Mobile App Developer",
-            companyName = "StartupXYZ",
-            location = "New York, NY",
-            salary = "$100k - $140k/year",
-            companyLogo = "https://example.com/logo2.png",
-            tags = listOf("Android", "AWS", "Firebase"),
-            isBookmarked = true,
-            onCardClick = { },
-            onBookmarkClick = { }
-        )
+// ✅ Helper function to get company initials
+private fun getCompanyInitials(companyName: String): String {
+    val words = companyName.split(" ", "-", ".", ",")
+    return when {
+        words.size >= 2 -> "${words[0].firstOrNull()?.uppercase()}${words[1].firstOrNull()?.uppercase()}"
+        words.isNotEmpty() -> words[0].take(2).uppercase()
+        else -> "CO"
     }
+}
+
+// ✅ Generate color from company name for consistent branding
+private fun generateColorFromName(name: String): Color {
+    val hash = name.hashCode()
+    val colors = listOf(
+        Color(0xFF6750A4), // Purple
+        Color(0xFF006A6A), // Teal
+        Color(0xFF8E4585), // Pink
+        Color(0xFF006D3B), // Green
+        Color(0xFF825500), // Orange
+        Color(0xFF006A6A), // Cyan
+        Color(0xFF904D00), // Brown
+        Color(0xFF006874), // Blue
+    )
+    return colors[Math.abs(hash) % colors.size]
 }

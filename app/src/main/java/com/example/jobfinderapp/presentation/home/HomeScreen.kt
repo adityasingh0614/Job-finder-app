@@ -32,21 +32,28 @@ fun HomeScreen(
     val jobsPagingItems = viewModel.jobsPagingFlow.collectAsLazyPagingItems()
     val savedJobIds by viewModel.savedJobIds.collectAsState()
 
-    Scaffold(
-        topBar = { HomeTopBar(onSearchClick = onSearchClick, onFilterClick = onFilterClick) },  contentWindowInsets = WindowInsets(0.dp),
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
+    // ✅ Fix overlapping by removing Scaffold topBar and adding TopBar manually
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        // TopBar outside Scaffold
+        // ✅ Fixed TopBar - not collapsing
+        HomeTopBar(
+            onSearchClick = onSearchClick,
+            onFilterClick = onFilterClick
+        )
+
+        // Jobs List
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 8.dp)
         ) {
             item {
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // ✅ Jobs List with proper key
             items(
                 count = jobsPagingItems.itemCount,
                 key = { index ->
@@ -70,7 +77,6 @@ fun HomeScreen(
                 }
             }
 
-            // Loading state for initial load
             when {
                 jobsPagingItems.loadState.refresh is LoadState.Loading -> {
                     item(key = "loading_refresh") {
@@ -109,19 +115,15 @@ fun HomeScreen(
 @Composable
 private fun HomeTopBar(
     onSearchClick: () -> Unit,
-    onFilterClick: () -> Unit // ✅ Add this parameter
+    onFilterClick: () -> Unit
 ) {
-    Box(
+    // ✅ Use Surface instead of Box to avoid issues
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer,
-                        MaterialTheme.colorScheme.surface
-                    )
-                )
-            )
+            .statusBarsPadding(), // Safe area for status bar
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shadowElevation = 4.dp
     ) {
         Column(
             modifier = Modifier
@@ -145,32 +147,47 @@ private fun HomeTopBar(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            SearchBar(
-                query = "",
-                onQueryChange = {},
-                onSearch = {},
-                active = false,
-                onActiveChange = { if (it) onSearchClick() },
-                placeholder = {
-                    Text("Search jobs, companies, skills...")
-                },
-                leadingIcon = {
+            // ✅ Use Card instead of SearchBar for better control
+            Card(
+                onClick = onSearchClick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                shape = MaterialTheme.shapes.large
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = "Search"
+                        contentDescription = "Search",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                },
-                trailingIcon = {
-                    IconButton(onClick = onFilterClick) { // ✅ Connect to actual function
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Text(
+                        text = "Search jobs, companies, skills...",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    IconButton(onClick = onFilterClick) {
                         Icon(
                             imageVector = Icons.Outlined.FilterList,
-                            contentDescription = "Filters"
+                            contentDescription = "Filters",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {}
+                }
+            }
         }
     }
 }
+
 
